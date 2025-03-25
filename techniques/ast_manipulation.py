@@ -3,7 +3,7 @@ import random
 import string
 
 class ASTManipulator(ast.NodeTransformer):
-    """Zamienia nazwy zmiennych na losowe ciągi znaków."""
+    """Zamienia nazwy zmiennych na losowe ciągi znaków oraz modyfikuje operacje na tekstach."""
     
     def __init__(self):
         self.var_map = {}
@@ -16,6 +16,13 @@ class ASTManipulator(ast.NodeTransformer):
             if node.id not in self.var_map:
                 self.var_map[node.id] = self.random_name()
             node.id = self.var_map[node.id]
+        return node
+
+    def visit_BinOp(self, node):
+        """Przekształca operacje binarne na operacje na ciągach znakowych."""
+        if isinstance(node.op, ast.Add):  # Łączenie ciągów
+            if isinstance(node.left, ast.Str) and isinstance(node.right, ast.Str):
+                return ast.BinOp(left=node.left, op=ast.Add(), right=node.right)
         return node
 
     def apply(self, tree):

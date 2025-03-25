@@ -9,7 +9,7 @@ from parser import CodeParser
 
 class CodeObfuscator:
     """Główna klasa zarządzająca obfuskacją kodu."""
-
+    
     def __init__(self, code, techniques):
         self.parser = CodeParser(code)
         self.techniques = techniques  
@@ -40,12 +40,13 @@ if __name__ == "__main__":
         print("Plik hello_world.py nie został znaleziony!")
         sys.exit(1)
 
+    # Wybór technik obfuskacji
     print("Wybierz techniki obfuskacji (oddzielone przecinkami):")
     print("1 - Wstawianie losowego kodu (Junk Code)")
     print("2 - Polimorfizm (Polymorphism)")
     print("3 - Metamorfizm (Metamorphism)")
     print("4 - Manipulacja AST")
-
+    
     choice = input("Podaj numery technik (np. 1,3): ").strip()
     selected_techniques = []
 
@@ -62,14 +63,19 @@ if __name__ == "__main__":
         print("Nie wybrano żadnej techniki. Zakończono.")
         sys.exit(0)
 
-    # Obfuskacja kodu
     obfuscator = CodeObfuscator(code, selected_techniques)
     obfuscated_code = obfuscator.obfuscate()
 
+    # Wypisanie obfuskowanego kodu przed zapisaniem do .exe
     print("\n===== OBFUSKOWANY KOD =====")
     print(obfuscated_code)
 
-    # Tworzenie pliku .exe
-    print("\nTworzenie pliku wykonywalnego...")
-    obfuscator.create_executable(obfuscated_code)
-    print(f"Plik wykonywalny został utworzony w folderze 'dist'.")
+    # Opcjonalnie: zapis obfuskowanego kodu do pliku .py
+    with open("obfuscated_code.py", "w") as f:
+        f.write(obfuscated_code)
+
+    # Teraz przekształcamy ten obfuskowany kod do pliku wykonywalnego (.exe)
+    # Na przykład używając pyinstaller:
+    subprocess.run(["pyinstaller", "--onefile", "obfuscated_code.py"])
+
+    print("\nKod został obfuskowany i zapisany do pliku .exe")

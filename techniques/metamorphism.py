@@ -1,26 +1,21 @@
 import ast
 
 class MetamorphismTransformer(ast.NodeTransformer):
-    """ Transformacja kodu poprzez metamorfizm (przekształcenia składni). """
-
+    """Zmienia sposób przypisania ciągu tekstowego na bardziej skomplikowany."""  
+    
     def apply(self, tree):
         return self.visit(tree)
 
     def visit_Assign(self, node):
-        """ Zmienia strukturę przypisań na bardziej skomplikowaną. """
+        """Zmienia przypisanie na bardziej złożone operacje na ciągach znakowych."""
         self.generic_visit(node)
-
-        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, (int, float)): 
+        
+        if isinstance(node.value, ast.Str):  # Jeśli przypisujemy ciąg tekstowy
             new_value = ast.BinOp(
-                left=ast.Constant(value=node.value.value // 2),
+                left=ast.Constant(value=node.value.s[:len(node.value.s)//2]),
                 op=ast.Add(),
-                right=ast.Constant(value=node.value.value - (node.value.value // 2))
+                right=ast.Constant(value=node.value.s[len(node.value.s)//2:])
             )
-            new_node = ast.Assign(targets=node.targets, value=new_value)
-
-            new_node.lineno = node.lineno
-            new_node.col_offset = node.col_offset
-
-            return new_node
-
+            return ast.Assign(targets=node.targets, value=new_value)
+        
         return node
