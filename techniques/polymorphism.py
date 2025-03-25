@@ -1,17 +1,32 @@
 import ast
+import random
+import string
 
 class PolymorphismTransformer(ast.NodeTransformer):
-    """Zamienia operacje arytmetyczne na operacje na ciągach tekstowych."""
-    
+    """Zamienia zmienne i operacje tekstowe na inne, zachowując logikę."""
+
+    def random_name(self, length=8):
+        """Generuje losowe nazwy zmiennych."""
+        return ''.join(random.choices(string.ascii_letters, k=length))
+
+    def visit_Name(self, node):
+        """Zamienia nazwy zmiennych na losowe ciągi znaków, ale nie zmienia kluczowych zmiennych takich jak os.path."""
+        if isinstance(node, ast.Name):
+            if node.id not in ['os', 'path', 'makedirs']:  # Nie zmieniaj zmiennych związanych z os
+                node.id = self.random_name()  # Losowa zmiana nazwy zmiennej
+        return node
+
     def visit_BinOp(self, node):
-        if isinstance(node.op, ast.Add):  # Zamiana dodawania ciągów na inne operacje
+        """Zamiana operacji na ciągach tekstowych w sposób polimorficzny."""
+        if isinstance(node.op, ast.Add):
             if isinstance(node.left, ast.Str) and isinstance(node.right, ast.Str):
-                # Zamiast dodawania, użyjmy np. metody join() do połączenia
+                # Zamiast używać "+" do łączenia, zamieniamy na np. concat
                 new_op = ast.Call(
-                    func=ast.Name(id=''.join(['join']), ctx=ast.Load()),
-                    args=[node.left, node.right], keywords=[]
+                    func=ast.Name(id='concat', ctx=ast.Load()),  # Funkcja concat do łączenia tekstu
+                    args=[node.left, node.right],
+                    keywords=[]
                 )
-                return new_op  # Zwracamy zmienioną operację
+                return new_op
         return node
 
     def apply(self, tree):

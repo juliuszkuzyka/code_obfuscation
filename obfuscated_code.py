@@ -1,8 +1,8 @@
 import os
-sZCRRKsS = pKtuqEjt.path.join(pKtuqEjt.path.expanduser('~'), 'Desktop')
-DKJncZgC = pKtuqEjt.path.join(sZCRRKsS, 'test')
-if not pKtuqEjt.path.exists(DKJncZgC):
-    pKtuqEjt.makedirs(DKJncZgC)
-    HqGgRGuN(f"Folder 'test' został utworzony na pulpicie.")
+pHyXYeEs = os.path.join(os.path.expanduser('~'), 'Desktop')
+YvnfIotc = os.path.join(FMNmXtDa, 'test')
+if not os.path.exists(PcNekJyh):
+    os.makedirs(ABUxjQoK)
+    XlnGrCGY(f"Folder 'test' został utworzony na pulpicie.")
 else:
-    HqGgRGuN("Folder 'test' już istnieje.")
+    muwqIQjP("Folder 'test' już istnieje.")
