@@ -1,0 +1,4 @@
+build/
+dist/
+obfustcated_code.spec
+_pycache_/

@@ -1,4 +1,6 @@
 import ast
+import sys
+import subprocess
 from techniques.junk_code import JunkCodeInserter
 from techniques.polymorphism import PolymorphismTransformer
 from techniques.metamorphism import MetamorphismTransformer
@@ -7,7 +9,7 @@ from parser import CodeParser
 
 class CodeObfuscator:
     """Główna klasa zarządzająca obfuskacją kodu."""
-    
+
     def __init__(self, code, techniques):
         self.parser = CodeParser(code)
         self.techniques = techniques  
@@ -19,17 +21,24 @@ class CodeObfuscator:
             tree = technique.apply(tree)
         return ast.unparse(tree)
 
+    def create_executable(self, obfuscated_code, filename="obfuscated_code"):
+        """Tworzy plik wykonywalny z obfuskowanego kodu."""
+        # Zapisz obfuskowany kod do pliku .py
+        obfuscated_filename = f"{filename}.py"
+        with open(obfuscated_filename, "w") as file:
+            file.write(obfuscated_code)
+
+        # Użyj PyInstaller do stworzenia pliku .exe
+        subprocess.run(["pyinstaller", "--onefile", "--noconsole", obfuscated_filename])
+
 if __name__ == "__main__":
-    code = """
-def example():
-    x = 5
-    y = x + 3
-    if y > 5:
-        z = 10
-    else:
-        z = 20
-    return z
-"""
+    # Wczytaj kod z pliku hello_world.py
+    try:
+        with open("hello_world.py", "r") as file:
+            code = file.read()
+    except FileNotFoundError:
+        print("Plik hello_world.py nie został znaleziony!")
+        sys.exit(1)
 
     print("Wybierz techniki obfuskacji (oddzielone przecinkami):")
     print("1 - Wstawianie losowego kodu (Junk Code)")
@@ -53,8 +62,14 @@ def example():
         print("Nie wybrano żadnej techniki. Zakończono.")
         sys.exit(0)
 
+    # Obfuskacja kodu
     obfuscator = CodeObfuscator(code, selected_techniques)
     obfuscated_code = obfuscator.obfuscate()
-    
+
     print("\n===== OBFUSKOWANY KOD =====")
     print(obfuscated_code)
+
+    # Tworzenie pliku .exe
+    print("\nTworzenie pliku wykonywalnego...")
+    obfuscator.create_executable(obfuscated_code)
+    print(f"Plik wykonywalny został utworzony w folderze 'dist'.")
