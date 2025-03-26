@@ -1,8 +1,25 @@
+def ACWvSlfzYLku(x, y):
+    return os.path.join(x, y)
+
+def AOlSjcDxwkDv(x, y):
+    return os.path.join(x, y)
+
+def tHtnRhmgjGGk(p):
+    return os.path.exists(p)
+
+def RVOLXTJKmEbE(p):
+    os.makedirs(p)
+
+def JFOgRbdkrzMX(msg):
+    print(msg)
+
+def trsQMnqjNyMb(msg):
+    print(msg)
 import os
-pHyXYeEs = os.path.join(os.path.expanduser('~'), 'Desktop')
-YvnfIotc = os.path.join(FMNmXtDa, 'test')
-if not os.path.exists(PcNekJyh):
-    os.makedirs(ABUxjQoK)
-    XlnGrCGY(f"Folder 'test' został utworzony na pulpicie.")
+desktop_path = ACWvSlfzYLku(os.path.expanduser('~'), 'Desktop')
+new_folder_path = AOlSjcDxwkDv(desktop_path, 'test')
+if not tHtnRhmgjGGk(new_folder_path):
+    RVOLXTJKmEbE(new_folder_path)
+    JFOgRbdkrzMX(f"Folder 'test' został utworzony na pulpicie.")
 else:
-    muwqIQjP("Folder 'test' już istnieje.")
+    trsQMnqjNyMb("Folder 'test' już istnieje.")

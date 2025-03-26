@@ -3,31 +3,148 @@ import random
 import string
 
 class PolymorphismTransformer(ast.NodeTransformer):
-    """Zamienia zmienne i operacje tekstowe na inne, zachowując logikę."""
+    """Zamienia standardowe funkcje na własne, polimorficzne odpowiedniki."""
 
-    def random_name(self, length=8):
-        """Generuje losowe nazwy zmiennych."""
+    def __init__(self):
+        self.helpers = []
+
+    def random_name(self, length=12):
+        """Generuje losową nazwę."""
         return ''.join(random.choices(string.ascii_letters, k=length))
 
-    def visit_Name(self, node):
-        """Zamienia nazwy zmiennych na losowe ciągi znaków, ale nie zmienia kluczowych zmiennych takich jak os.path."""
-        if isinstance(node, ast.Name):
-            if node.id not in ['os', 'path', 'makedirs']:  # Nie zmieniaj zmiennych związanych z os
-                node.id = self.random_name()  # Losowa zmiana nazwy zmiennej
-        return node
-
-    def visit_BinOp(self, node):
-        """Zamiana operacji na ciągach tekstowych w sposób polimorficzny."""
-        if isinstance(node.op, ast.Add):
-            if isinstance(node.left, ast.Str) and isinstance(node.right, ast.Str):
-                # Zamiast używać "+" do łączenia, zamieniamy na np. concat
-                new_op = ast.Call(
-                    func=ast.Name(id='concat', ctx=ast.Load()),  # Funkcja concat do łączenia tekstu
-                    args=[node.left, node.right],
-                    keywords=[]
+    def visit_Call(self, node):
+        """Opakowuje wywołania standardowych funkcji w losowo nazwane funkcje."""
+        if isinstance(node.func, ast.Attribute):
+            # os.path.join -> custom_join
+            if node.func.attr == "join" and isinstance(node.func.value, ast.Attribute):
+                if node.func.value.attr == "path" and node.func.value.value.id == "os":
+                    join_helper = self.random_name()
+                    self.helpers.append(
+                        ast.FunctionDef(
+                            name=join_helper,
+                            args=ast.arguments(
+                                posonlyargs=[],
+                                args=[ast.arg(arg="x"), ast.arg(arg="y")],
+                                kwonlyargs=[],
+                                kw_defaults=[],
+                                defaults=[]
+                            ),
+                            body=[ast.Return(value=ast.Call(
+                                func=ast.Attribute(
+                                    value=ast.Attribute(
+                                        value=ast.Name(id="os", ctx=ast.Load()),
+                                        attr="path",
+                                        ctx=ast.Load()
+                                    ),
+                                    attr="join",
+                                    ctx=ast.Load()
+                                ),
+                                args=[ast.Name(id="x", ctx=ast.Load()), ast.Name(id="y", ctx=ast.Load())],
+                                keywords=[]
+                            ))],
+                            decorator_list=[]
+                        )
+                    )
+                    return ast.Call(
+                        func=ast.Name(id=join_helper, ctx=ast.Load()),
+                        args=node.args,
+                        keywords=node.keywords
+                    )
+            # os.path.exists -> custom_exists
+            elif node.func.attr == "exists" and isinstance(node.func.value, ast.Attribute):
+                if node.func.value.attr == "path" and node.func.value.value.id == "os":
+                    exists_helper = self.random_name()
+                    self.helpers.append(
+                        ast.FunctionDef(
+                            name=exists_helper,
+                            args=ast.arguments(
+                                posonlyargs=[],
+                                args=[ast.arg(arg="p")],
+                                kwonlyargs=[],
+                                kw_defaults=[],
+                                defaults=[]
+                            ),
+                            body=[ast.Return(value=ast.Call(
+                                func=ast.Attribute(
+                                    value=ast.Attribute(
+                                        value=ast.Name(id="os", ctx=ast.Load()),
+                                        attr="path",
+                                        ctx=ast.Load()
+                                    ),
+                                    attr="exists",
+                                    ctx=ast.Load()
+                                ),
+                                args=[ast.Name(id="p", ctx=ast.Load())],
+                                keywords=[]
+                            ))],
+                            decorator_list=[]
+                        )
+                    )
+                    return ast.Call(
+                        func=ast.Name(id=exists_helper, ctx=ast.Load()),
+                        args=node.args,
+                        keywords=node.keywords
+                    )
+            # os.makedirs -> custom_makedirs
+            elif node.func.attr == "makedirs" and node.func.value.id == "os":
+                makedirs_helper = self.random_name()
+                self.helpers.append(
+                    ast.FunctionDef(
+                        name=makedirs_helper,
+                        args=ast.arguments(
+                            posonlyargs=[],
+                            args=[ast.arg(arg="p")],
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            defaults=[]
+                        ),
+                        body=[ast.Expr(value=ast.Call(
+                            func=ast.Attribute(
+                                value=ast.Name(id="os", ctx=ast.Load()),
+                                attr="makedirs",
+                                ctx=ast.Load()
+                            ),
+                            args=[ast.Name(id="p", ctx=ast.Load())],
+                            keywords=[]
+                        ))],
+                        decorator_list=[]
+                    )
                 )
-                return new_op
-        return node
+                return ast.Call(
+                    func=ast.Name(id=makedirs_helper, ctx=ast.Load()),
+                    args=node.args,
+                    keywords=node.keywords
+                )
+        # print -> custom_print
+        elif isinstance(node.func, ast.Name) and node.func.id == "print":
+            print_helper = self.random_name()
+            self.helpers.append(
+                ast.FunctionDef(
+                    name=print_helper,
+                    args=ast.arguments(
+                        posonlyargs=[],
+                        args=[ast.arg(arg="msg")],
+                        kwonlyargs=[],
+                        kw_defaults=[],
+                        defaults=[]
+                    ),
+                    body=[ast.Expr(value=ast.Call(
+                        func=ast.Name(id="print", ctx=ast.Load()),
+                        args=[ast.Name(id="msg", ctx=ast.Load())],
+                        keywords=[]
+                    ))],
+                    decorator_list=[]
+                )
+            )
+            return ast.Call(
+                func=ast.Name(id=print_helper, ctx=ast.Load()),
+                args=node.args,
+                keywords=node.keywords
+            )
+        return self.generic_visit(node)
 
     def apply(self, tree):
-        return self.visit(tree)
+        """Stosuje transformację i dodaje funkcje pomocnicze."""
+        tree = self.visit(tree)
+        tree.body = self.helpers + tree.body
+        return tree

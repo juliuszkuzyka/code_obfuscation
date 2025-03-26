@@ -3,32 +3,25 @@ import random
 import string
 
 class ASTManipulator(ast.NodeTransformer):
-    """Manipulacja AST polegająca na zamianie nazw zmiennych na losowe ciągi znaków."""
+    """Zmienia nazwy zmiennych na losowe ciągi znaków, zachowując funkcjonalność."""
 
     def __init__(self):
         self.var_map = {}
 
-    def random_name(self, length=8):
-        """Generuje losową nazwę zmiennej."""
+    def random_name(self, length=12):
+        """Generuje losową nazwę o podanej długości."""
         return ''.join(random.choices(string.ascii_letters, k=length))
 
-    def visit_Import(self, node):
-        """Zachowujemy importy bez zmian."""
-        return node
-
-    def visit_ImportFrom(self, node):
-        """Zachowujemy importy z modułów bez zmian."""
-        return node
-
     def visit_Name(self, node):
-        """Zmienia tylko nazwy zmiennych, ale nie zmienia nazw modułów."""
-        if isinstance(node.ctx, ast.Store) or isinstance(node.ctx, ast.Load):
-            # Unikaj zmiany nazw w modułach (np. os, sys)
-            if node.id not in ["os", "sys", "path"]:
+        """Zmienia nazwy zmiennych, ale nie dotyka modułów ani funkcji standardowych."""
+        if isinstance(node.ctx, (ast.Store, ast.Load)):
+            protected_names = {"os", "sys", "print"}  # Chronione nazwy
+            if node.id not in protected_names:
                 if node.id not in self.var_map:
                     self.var_map[node.id] = self.random_name()
                 node.id = self.var_map[node.id]
         return node
 
     def apply(self, tree):
+        """Stosuje transformację na drzewie AST."""
         return self.visit(tree)

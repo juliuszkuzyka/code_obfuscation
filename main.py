@@ -1,46 +1,72 @@
 import ast
 import sys
 import subprocess
+import logging
+
 from techniques.junk_code import JunkCodeInserter
 from techniques.polymorphism import PolymorphismTransformer
 from techniques.metamorphism import MetamorphismTransformer
 from techniques.ast_manipulation import ASTManipulator
-from parser import CodeParser
+
+# Konfiguracja logowania dla lepszej diagnostyki
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 class CodeObfuscator:
-    """Główna klasa zarządzająca obfuskacją kodu."""
+    """Klasa zarządzająca obfuskacją kodu Pythona."""
     
     def __init__(self, code, techniques):
-        self.parser = CodeParser(code)
+        self.code = code
         self.techniques = techniques  
 
+    def get_ast(self):
+        """Parsuje kod źródłowy do drzewa AST."""
+        try:
+            return ast.parse(self.code)
+        except SyntaxError as e:
+            logger.error(f"Błąd składni w kodzie źródłowym: {e}")
+            sys.exit(1)
+
     def obfuscate(self):
-        """Przeprowadza obfuskację kodu, stosując wybrane techniki."""
-        tree = self.parser.get_ast()
+        """Obfuskuje kod przy użyciu wybranych technik."""
+        tree = self.get_ast()
         for technique in self.techniques:
+            logger.info(f"Stosowanie techniki: {technique.__class__.__name__}")
             tree = technique.apply(tree)
+        ast.fix_missing_locations(tree)  # Naprawa lokalizacji w AST
         return ast.unparse(tree)
 
     def create_executable(self, obfuscated_code, filename="obfuscated_code"):
         """Tworzy plik wykonywalny z obfuskowanego kodu."""
-        # Zapisz obfuskowany kod do pliku .py
         obfuscated_filename = f"{filename}.py"
-        with open(obfuscated_filename, "w") as file:
-            file.write(obfuscated_code)
-
-        # Użyj PyInstaller do stworzenia pliku .exe
-        subprocess.run(["pyinstaller", "--onefile", "--noconsole", obfuscated_filename])
+        try:
+            with open(obfuscated_filename, "w", encoding="utf-8") as file:
+                file.write(obfuscated_code)
+            logger.info(f"Zapisano obfuskowany kod do {obfuscated_filename}")
+            subprocess.run(
+                ["pyinstaller", "--onefile", "--noconsole", "--hidden-import=os", obfuscated_filename],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            logger.info(f"Plik .exe utworzony w folderze dist/")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Błąd podczas tworzenia .exe: {e.stderr.decode()}")
+            sys.exit(1)
+        except IOError as e:
+            logger.error(f"Błąd zapisu pliku: {e}")
+            sys.exit(1)
 
 if __name__ == "__main__":
-    # Wczytaj kod z pliku hello_world.py
+    # Wczytanie kodu źródłowego
     try:
-        with open("hello_world.py", "r") as file:
+        with open("hello_world.py", "r", encoding="utf-8") as file:
             code = file.read()
     except FileNotFoundError:
-        print("Plik hello_world.py nie został znaleziony!")
+        logger.error("Plik hello_world.py nie został znaleziony!")
         sys.exit(1)
 
-    # Wybór technik obfuskacji
+    # Interfejs wyboru technik
     print("Wybierz techniki obfuskacji (oddzielone przecinkami):")
     print("1 - Wstawianie losowego kodu (Junk Code)")
     print("2 - Polimorfizm (Polymorphism)")
@@ -50,32 +76,31 @@ if __name__ == "__main__":
     choice = input("Podaj numery technik (np. 1,3): ").strip()
     selected_techniques = []
 
-    if "1" in choice:
-        selected_techniques.append(JunkCodeInserter())
-    if "2" in choice:
-        selected_techniques.append(PolymorphismTransformer())
-    if "3" in choice:
-        selected_techniques.append(MetamorphismTransformer())
-    if "4" in choice:
-        selected_techniques.append(ASTManipulator())
+    technique_map = {
+        "1": JunkCodeInserter,
+        "2": PolymorphismTransformer,
+        "3": MetamorphismTransformer,
+        "4": ASTManipulator
+    }
+
+    for num in choice.split(","):
+        if num in technique_map:
+            selected_techniques.append(technique_map[num]())
+        else:
+            logger.warning(f"Nieprawidłowy numer techniki: {num}. Pominięto.")
 
     if not selected_techniques:
-        print("Nie wybrano żadnej techniki. Zakończono.")
+        logger.error("Nie wybrano żadnej techniki. Zakończono.")
         sys.exit(0)
 
     obfuscator = CodeObfuscator(code, selected_techniques)
     obfuscated_code = obfuscator.obfuscate()
 
-    # Wypisanie obfuskowanego kodu przed zapisaniem do .exe
     print("\n===== OBFUSKOWANY KOD =====")
     print(obfuscated_code)
 
-    # Opcjonalnie: zapis obfuskowanego kodu do pliku .py
-    with open("obfuscated_code.py", "w") as f:
+    with open("obfuscated_code.py", "w", encoding="utf-8") as f:
         f.write(obfuscated_code)
 
-    # Teraz przekształcamy ten obfuskowany kod do pliku wykonywalnego (.exe)
-    # Na przykład używając pyinstaller:
-    subprocess.run(["pyinstaller", "--onefile", "obfuscated_code.py"])
-
+    obfuscator.create_executable(obfuscated_code)
     print("\nKod został obfuskowany i zapisany do pliku .exe")

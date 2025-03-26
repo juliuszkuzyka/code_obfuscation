@@ -2,3 +2,4 @@ build/
 dist/
 obfustcated_code.spec
 _pycache_/
+obfuscated_code.py
