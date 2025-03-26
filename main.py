@@ -8,7 +8,6 @@ from techniques.polymorphism import PolymorphismTransformer
 from techniques.metamorphism import MetamorphismTransformer
 from techniques.ast_manipulation import ASTManipulator
 
-# Konfiguracja logowania dla lepszej diagnostyki
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -30,10 +29,12 @@ class CodeObfuscator:
     def obfuscate(self):
         """Obfuskuje kod przy użyciu wybranych technik."""
         tree = self.get_ast()
-        for technique in self.techniques:
+        # Upewniamy się, że PolymorphismTransformer działa jako pierwszy
+        ordered_techniques = sorted(self.techniques, key=lambda t: 0 if isinstance(t, PolymorphismTransformer) else 1)
+        for technique in ordered_techniques:
             logger.info(f"Stosowanie techniki: {technique.__class__.__name__}")
             tree = technique.apply(tree)
-        ast.fix_missing_locations(tree)  # Naprawa lokalizacji w AST
+        ast.fix_missing_locations(tree)
         return ast.unparse(tree)
 
     def create_executable(self, obfuscated_code, filename="obfuscated_code"):
@@ -44,7 +45,7 @@ class CodeObfuscator:
                 file.write(obfuscated_code)
             logger.info(f"Zapisano obfuskowany kod do {obfuscated_filename}")
             subprocess.run(
-                ["pyinstaller", "--onefile", "--noconsole", "--hidden-import=os", obfuscated_filename],
+                ["pyinstaller", "--onefile", "--noconsole", "--hidden-import=os", "--hidden-import=base64", obfuscated_filename],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
@@ -58,7 +59,6 @@ class CodeObfuscator:
             sys.exit(1)
 
 if __name__ == "__main__":
-    # Wczytanie kodu źródłowego
     try:
         with open("hello_world.py", "r", encoding="utf-8") as file:
             code = file.read()
@@ -66,7 +66,6 @@ if __name__ == "__main__":
         logger.error("Plik hello_world.py nie został znaleziony!")
         sys.exit(1)
 
-    # Interfejs wyboru technik
     print("Wybierz techniki obfuskacji (oddzielone przecinkami):")
     print("1 - Wstawianie losowego kodu (Junk Code)")
     print("2 - Polimorfizm (Polymorphism)")

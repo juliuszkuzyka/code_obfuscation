@@ -3,7 +3,7 @@ import random
 import string
 
 class PolymorphismTransformer(ast.NodeTransformer):
-    """Zamienia standardowe funkcje na własne, polimorficzne odpowiedniki."""
+    """Zamienia standardowe funkcje na polimorficzne odpowiedniki."""
 
     def __init__(self):
         self.helpers = []
@@ -15,7 +15,6 @@ class PolymorphismTransformer(ast.NodeTransformer):
     def visit_Call(self, node):
         """Opakowuje wywołania standardowych funkcji w losowo nazwane funkcje."""
         if isinstance(node.func, ast.Attribute):
-            # os.path.join -> custom_join
             if node.func.attr == "join" and isinstance(node.func.value, ast.Attribute):
                 if node.func.value.attr == "path" and node.func.value.value.id == "os":
                     join_helper = self.random_name()
@@ -50,7 +49,6 @@ class PolymorphismTransformer(ast.NodeTransformer):
                         args=node.args,
                         keywords=node.keywords
                     )
-            # os.path.exists -> custom_exists
             elif node.func.attr == "exists" and isinstance(node.func.value, ast.Attribute):
                 if node.func.value.attr == "path" and node.func.value.value.id == "os":
                     exists_helper = self.random_name()
@@ -85,7 +83,6 @@ class PolymorphismTransformer(ast.NodeTransformer):
                         args=node.args,
                         keywords=node.keywords
                     )
-            # os.makedirs -> custom_makedirs
             elif node.func.attr == "makedirs" and node.func.value.id == "os":
                 makedirs_helper = self.random_name()
                 self.helpers.append(
@@ -115,7 +112,35 @@ class PolymorphismTransformer(ast.NodeTransformer):
                     args=node.args,
                     keywords=node.keywords
                 )
-        # print -> custom_print
+            elif node.func.attr == "expanduser" and node.func.value.id == "os":
+                expanduser_helper = self.random_name()
+                self.helpers.append(
+                    ast.FunctionDef(
+                        name=expanduser_helper,
+                        args=ast.arguments(
+                            posonlyargs=[],
+                            args=[ast.arg(arg="p")],
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            defaults=[]
+                        ),
+                        body=[ast.Return(value=ast.Call(
+                            func=ast.Attribute(
+                                value=ast.Name(id="os", ctx=ast.Load()),
+                                attr="expanduser",
+                                ctx=ast.Load()
+                            ),
+                            args=[ast.Name(id="p", ctx=ast.Load())],
+                            keywords=[]
+                        ))],
+                        decorator_list=[]
+                    )
+                )
+                return ast.Call(
+                    func=ast.Name(id=expanduser_helper, ctx=ast.Load()),
+                    args=node.args,
+                    keywords=node.keywords
+                )
         elif isinstance(node.func, ast.Name) and node.func.id == "print":
             print_helper = self.random_name()
             self.helpers.append(

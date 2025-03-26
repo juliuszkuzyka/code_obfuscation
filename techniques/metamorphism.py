@@ -17,16 +17,24 @@ class MetamorphismTransformer(ast.NodeTransformer):
                 ops=[ast.Is()],
                 comparators=[ast.Constant(value=False)]
             )
-        elif isinstance(node.test, ast.Call):  # Dodatkowa transformacja: if func() -> if bool(func())
+        elif isinstance(node.test, ast.Call):
             node.test = ast.Call(
                 func=ast.Name(id="bool", ctx=ast.Load()),
                 args=[node.test],
                 keywords=[]
             )
+        # Losowa transformacja: zamiana if na while z break
+        if random.choice([True, False]):
+            new_body = node.body + [ast.Break()]
+            return ast.While(
+                test=node.test,
+                body=new_body,
+                orelse=node.orelse
+            )
         return self.generic_visit(node)
 
     def visit_BinOp(self, node):
-        """Zamienia proste operacje na bardziej złożone, np. x + y -> x.__add__(y)."""
+        """Zamienia operacje binarne na wywołania metod."""
         if isinstance(node.op, ast.Add):
             return ast.Call(
                 func=ast.Attribute(

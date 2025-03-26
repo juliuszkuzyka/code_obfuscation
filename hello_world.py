@@ -9,6 +9,6 @@ new_folder_path = os.path.join(desktop_path, "test")
 # Tworzenie folderu
 if not os.path.exists(new_folder_path):
     os.makedirs(new_folder_path)
-    print(f"Folder 'test' został utworzony na pulpicie.")
+    print("Folder 'test' został utworzony na pulpicie.")
 else:
     print("Folder 'test' już istnieje.")
