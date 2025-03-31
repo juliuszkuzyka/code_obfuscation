@@ -7,7 +7,6 @@ class XORCipher:
         self.key = ''.join(random.choices(string.ascii_letters, k=9))
 
     def split_key(self):
-        """Dzieli klucz na 3 równe części."""
         part_length = len(self.key) // 3
         return [self.key[i:i + part_length] for i in range(0, len(self.key), part_length)]
 
@@ -18,14 +17,23 @@ class XORCipher:
         return base64.b64encode(encrypted).decode()
 
     def generate_decoder(self, encrypted_code, key_parts):
+        p1 = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=15))
+        p2 = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=15))
+        p3 = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=15))
+        k = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=13))
+        enc = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=11))
+        cb = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=11))
+        dec = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=11))
+        fn = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=9))
+
         return f"""
-import base64
-key_part1 = "{key_parts[0]}"
-key_part2 = "{key_parts[1]}"
-key_part3 = "{key_parts[2]}"
-key = key_part1 + key_part2 + key_part3
-encrypted = "{encrypted_code}"
-code_bytes = base64.b64decode(encrypted.encode())
-decrypted = bytes(a ^ b for a, b in zip(code_bytes, key.encode() * (len(code_bytes) // len(key.encode()) + 1)))
-exec(decrypted.decode())
+import base64 as {fn}
+{p1} = "{key_parts[0]}"
+{p2} = "{key_parts[1]}"
+{p3} = "{key_parts[2]}"
+{k} = {p1} + {p2} + {p3}
+{enc} = "{encrypted_code}"
+{cb} = {fn}.b64decode({enc}.encode())
+{dec} = bytes(a ^ b for a, b in zip({cb}, {k}.encode() * (len({cb}) // len({k}.encode()) + 1)))
+exec({dec})
 """
