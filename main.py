@@ -1,8 +1,7 @@
-import ast
 import sys
-import subprocess
 import logging
-
+from src.obfuscator import CodeObfuscator
+from src.utils import load_code_from_file
 from techniques.junk_code import JunkCodeInserter
 from techniques.polymorphism import PolymorphismTransformer
 from techniques.metamorphism import MetamorphismTransformer
@@ -11,61 +10,11 @@ from techniques.ast_manipulation import ASTManipulator
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-class CodeObfuscator:
-    """Klasa zarządzająca obfuskacją kodu Pythona."""
-    
-    def __init__(self, code, techniques):
-        self.code = code
-        self.techniques = techniques  
+def main():
+    # Wczytanie kodu z hello_world.py
+    code = load_code_from_file("hello_world.py")
 
-    def get_ast(self):
-        """Parsuje kod źródłowy do drzewa AST."""
-        try:
-            return ast.parse(self.code)
-        except SyntaxError as e:
-            logger.error(f"Błąd składni w kodzie źródłowym: {e}")
-            sys.exit(1)
-
-    def obfuscate(self):
-        """Obfuskuje kod przy użyciu wybranych technik."""
-        tree = self.get_ast()
-        # Upewniamy się, że PolymorphismTransformer działa jako pierwszy
-        ordered_techniques = sorted(self.techniques, key=lambda t: 0 if isinstance(t, PolymorphismTransformer) else 1)
-        for technique in ordered_techniques:
-            logger.info(f"Stosowanie techniki: {technique.__class__.__name__}")
-            tree = technique.apply(tree)
-        ast.fix_missing_locations(tree)
-        return ast.unparse(tree)
-
-    def create_executable(self, obfuscated_code, filename="obfuscated_code"):
-        """Tworzy plik wykonywalny z obfuskowanego kodu."""
-        obfuscated_filename = f"{filename}.py"
-        try:
-            with open(obfuscated_filename, "w", encoding="utf-8") as file:
-                file.write(obfuscated_code)
-            logger.info(f"Zapisano obfuskowany kod do {obfuscated_filename}")
-            subprocess.run(
-                ["pyinstaller", "--onefile", "--noconsole", "--hidden-import=os", "--hidden-import=base64", obfuscated_filename],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            logger.info(f"Plik .exe utworzony w folderze dist/")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Błąd podczas tworzenia .exe: {e.stderr.decode()}")
-            sys.exit(1)
-        except IOError as e:
-            logger.error(f"Błąd zapisu pliku: {e}")
-            sys.exit(1)
-
-if __name__ == "__main__":
-    try:
-        with open("hello_world.py", "r", encoding="utf-8") as file:
-            code = file.read()
-    except FileNotFoundError:
-        logger.error("Plik hello_world.py nie został znaleziony!")
-        sys.exit(1)
-
+    # Wybór technik obfuskacji
     print("Wybierz techniki obfuskacji (oddzielone przecinkami):")
     print("1 - Wstawianie losowego kodu (Junk Code)")
     print("2 - Polimorfizm (Polymorphism)")
@@ -92,14 +41,10 @@ if __name__ == "__main__":
         logger.error("Nie wybrano żadnej techniki. Zakończono.")
         sys.exit(0)
 
+    # Uruchomienie obfuskacji
     obfuscator = CodeObfuscator(code, selected_techniques)
-    obfuscated_code = obfuscator.obfuscate()
+    obfuscator.create_obfuscated_executable()
+    print("Kod z hello_world.py został obfuskowany i zapisany jako plik .exe")
 
-    print("\n===== OBFUSKOWANY KOD =====")
-    print(obfuscated_code)
-
-    with open("obfuscated_code.py", "w", encoding="utf-8") as f:
-        f.write(obfuscated_code)
-
-    obfuscator.create_executable(obfuscated_code)
-    print("\nKod został obfuskowany i zapisany do pliku .exe")
+if __name__ == "__main__":
+    main()

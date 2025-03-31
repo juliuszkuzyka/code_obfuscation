@@ -1,5 +1,10 @@
+obfuscated_exploit.py
 build/
 dist/
-obfustcated_code.spec
-_pycache_/
-obfuscated_code.py
+*.spec
+*.pyc
+__pycache__/
+*.log
+*.tmp
+obfuscated_*.py
+obfuscated_*.spec
