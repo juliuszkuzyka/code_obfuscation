@@ -1,6 +1,7 @@
 import ast
 import random
 import string
+from src.utils import random_name  # Fixed import
 
 class PolymorphismTransformer(ast.NodeTransformer):
     """Zamienia standardowe funkcje na polimorficzne odpowiedniki."""
@@ -8,16 +9,12 @@ class PolymorphismTransformer(ast.NodeTransformer):
     def __init__(self):
         self.helpers = []
 
-    def random_name(self, length=12):
-        """Generuje losową nazwę."""
-        return ''.join(random.choices(string.ascii_letters, k=length))
-
     def visit_Call(self, node):
         """Opakowuje wywołania standardowych funkcji w losowo nazwane funkcje."""
         if isinstance(node.func, ast.Attribute):
             if node.func.attr == "join" and isinstance(node.func.value, ast.Attribute):
                 if node.func.value.attr == "path" and node.func.value.value.id == "os":
-                    join_helper = self.random_name()
+                    join_helper = random_name()
                     self.helpers.append(
                         ast.FunctionDef(
                             name=join_helper,
@@ -51,7 +48,7 @@ class PolymorphismTransformer(ast.NodeTransformer):
                     )
             elif node.func.attr == "exists" and isinstance(node.func.value, ast.Attribute):
                 if node.func.value.attr == "path" and node.func.value.value.id == "os":
-                    exists_helper = self.random_name()
+                    exists_helper = random_name()
                     self.helpers.append(
                         ast.FunctionDef(
                             name=exists_helper,
@@ -84,7 +81,7 @@ class PolymorphismTransformer(ast.NodeTransformer):
                         keywords=node.keywords
                     )
             elif node.func.attr == "makedirs" and node.func.value.id == "os":
-                makedirs_helper = self.random_name()
+                makedirs_helper = random_name()
                 self.helpers.append(
                     ast.FunctionDef(
                         name=makedirs_helper,
@@ -113,7 +110,7 @@ class PolymorphismTransformer(ast.NodeTransformer):
                     keywords=node.keywords
                 )
             elif node.func.attr == "expanduser" and node.func.value.id == "os":
-                expanduser_helper = self.random_name()
+                expanduser_helper = random_name()
                 self.helpers.append(
                     ast.FunctionDef(
                         name=expanduser_helper,
@@ -141,31 +138,57 @@ class PolymorphismTransformer(ast.NodeTransformer):
                     args=node.args,
                     keywords=node.keywords
                 )
-        elif isinstance(node.func, ast.Name) and node.func.id == "print":
-            print_helper = self.random_name()
-            self.helpers.append(
-                ast.FunctionDef(
-                    name=print_helper,
-                    args=ast.arguments(
-                        posonlyargs=[],
-                        args=[ast.arg(arg="msg")],
-                        kwonlyargs=[],
-                        kw_defaults=[],
-                        defaults=[]
-                    ),
-                    body=[ast.Expr(value=ast.Call(
-                        func=ast.Name(id="print", ctx=ast.Load()),
-                        args=[ast.Name(id="msg", ctx=ast.Load())],
-                        keywords=[]
-                    ))],
-                    decorator_list=[]
+        elif isinstance(node.func, ast.Name):
+            if node.func.id == "print":
+                print_helper = random_name()
+                self.helpers.append(
+                    ast.FunctionDef(
+                        name=print_helper,
+                        args=ast.arguments(
+                            posonlyargs=[],
+                            args=[ast.arg(arg="msg")],
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            defaults=[]
+                        ),
+                        body=[ast.Expr(value=ast.Call(
+                            func=ast.Name(id="print", ctx=ast.Load()),
+                            args=[ast.Name(id="msg", ctx=ast.Load())],
+                            keywords=[]
+                        ))],
+                        decorator_list=[]
+                    )
                 )
-            )
-            return ast.Call(
-                func=ast.Name(id=print_helper, ctx=ast.Load()),
-                args=node.args,
-                keywords=node.keywords
-            )
+                return ast.Call(
+                    func=ast.Name(id=print_helper, ctx=ast.Load()),
+                    args=node.args,
+                    keywords=node.keywords
+                )
+            elif node.func.id == "len":
+                len_helper = random_name()
+                self.helpers.append(
+                    ast.FunctionDef(
+                        name=len_helper,
+                        args=ast.arguments(
+                            posonlyargs=[],
+                            args=[ast.arg(arg="obj")],
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            defaults=[]
+                        ),
+                        body=[ast.Return(value=ast.Call(
+                            func=ast.Name(id="len", ctx=ast.Load()),
+                            args=[ast.Name(id="obj", ctx=ast.Load())],
+                            keywords=[]
+                        ))],
+                        decorator_list=[]
+                    )
+                )
+                return ast.Call(
+                    func=ast.Name(id=len_helper, ctx=ast.Load()),
+                    args=node.args,
+                    keywords=node.keywords
+                )
         return self.generic_visit(node)
 
     def apply(self, tree):
