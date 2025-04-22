@@ -46,7 +46,7 @@ def main():
             sys.exit(1)
         selected_techniques.append(technique_classes[num]())
     
-    code = load_code("hello_world.py")
+    code = load_code("calc.py")
     obfuscator = CodeObfuscator(code, selected_techniques)
     obfuscator.create_obfuscated_executable()
 
