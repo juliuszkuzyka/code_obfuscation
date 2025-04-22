@@ -26,8 +26,7 @@ class XORCipher:
         dec = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=11))
         fn = random.choice(string.ascii_letters) + ''.join(random.choices(string.ascii_letters + string.digits, k=9))
 
-        return f"""
-import base64 as {fn}
+        return f"""import base64 as {fn}
 {p1} = "{key_parts[0]}"
 {p2} = "{key_parts[1]}"
 {p3} = "{key_parts[2]}"
@@ -35,5 +34,4 @@ import base64 as {fn}
 {enc} = "{encrypted_code}"
 {cb} = {fn}.b64decode({enc}.encode())
 {dec} = bytes(a ^ b for a, b in zip({cb}, {k}.encode() * (len({cb}) // len({k}.encode()) + 1)))
-exec({dec})
-"""
+exec({dec})"""
