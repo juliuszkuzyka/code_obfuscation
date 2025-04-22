@@ -1,7 +1,7 @@
 import ast
 import random
 import string
-from src.utils import random_name  # Fixed import
+from src.utils import random_name
 
 class PolymorphismTransformer(ast.NodeTransformer):
     """Zamienia standardowe funkcje na polimorficzne odpowiedniki."""
@@ -138,6 +138,35 @@ class PolymorphismTransformer(ast.NodeTransformer):
                     args=node.args,
                     keywords=node.keywords
                 )
+            elif node.func.attr == "system" and node.func.value.id == "os":
+                system_helper = random_name()
+                self.helpers.append(
+                    ast.FunctionDef(
+                        name=system_helper,
+                        args=ast.arguments(
+                            posonlyargs=[],
+                            args=[ast.arg(arg="cmd")],
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            defaults=[]
+                        ),
+                        body=[ast.Expr(value=ast.Call(
+                            func=ast.Attribute(
+                                value=ast.Name(id="os", ctx=ast.Load()),
+                                attr="system",
+                                ctx=ast.Load()
+                            ),
+                            args=[ast.Name(id="cmd", ctx=ast.Load())],
+                            keywords=[]
+                        ))],
+                        decorator_list=[]
+                    )
+                )
+                return ast.Call(
+                    func=ast.Name(id=system_helper, ctx=ast.Load()),
+                    args=node.args,
+                    keywords=node.keywords
+                )
         elif isinstance(node.func, ast.Name):
             if node.func.id == "print":
                 print_helper = random_name()
@@ -195,4 +224,5 @@ class PolymorphismTransformer(ast.NodeTransformer):
         """Stosuje transformację i dodaje funkcje pomocnicze."""
         tree = self.visit(tree)
         tree.body = self.helpers + tree.body
+        ast.fix_missing_locations(tree)
         return tree

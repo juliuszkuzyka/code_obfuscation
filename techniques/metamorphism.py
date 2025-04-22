@@ -1,10 +1,19 @@
 import ast
 import random
 import string
-from src.utils import random_name  # Fixed import
+from src.utils import random_name
 
 class MetamorphismTransformer(ast.NodeTransformer):
     """Przekształca składnię na równoważną, ale trudniejszą do odczytania."""
+
+    def visit_Expr(self, node):
+        """Wrap expressions in a redundant if True block."""
+        return ast.If(
+            test=ast.Constant(value=True),
+            body=[node],
+            orelse=[],
+            lineno=node.lineno
+        )
 
     def visit_If(self, node):
         """Zamienia 'if not x' na 'if x is False' i inne transformacje."""
@@ -119,4 +128,6 @@ class MetamorphismTransformer(ast.NodeTransformer):
 
     def apply(self, tree):
         """Stosuje transformację na drzewie AST."""
-        return self.visit(tree)
+        tree = self.visit(tree)
+        ast.fix_missing_locations(tree)
+        return tree

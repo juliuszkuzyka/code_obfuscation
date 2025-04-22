@@ -8,7 +8,7 @@ from techniques.polymorphism import PolymorphismTransformer
 from techniques.metamorphism import MetamorphismTransformer
 from techniques.ast_manipulation import ASTManipulator
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 class CodeObfuscator:
@@ -19,7 +19,9 @@ class CodeObfuscator:
 
     def get_ast(self):
         try:
-            return ast.parse(self.code)
+            tree = ast.parse(self.code)
+            logger.debug(f"Pierwotny AST: {ast.dump(tree, indent=2)}")
+            return tree
         except SyntaxError as e:
             logger.error(f"Błąd składni: {e}")
             sys.exit(1)
@@ -32,10 +34,13 @@ class CodeObfuscator:
         )
         for technique in ordered_techniques:
             logger.info(f"Stosowanie techniki: {technique.__class__.__name__}")
+            logger.debug(f"AST przed {technique.__class__.__name__}: {ast.dump(tree, indent=2)}")
             tree = technique.apply(tree)
             try:
                 ast.fix_missing_locations(tree)
-                ast.unparse(tree)
+                obfuscated_code = ast.unparse(tree)
+                logger.debug(f"AST po {technique.__class__.__name__}: {ast.dump(tree, indent=2)}")
+                logger.debug(f"Obfuskowany kod: {obfuscated_code}")
             except Exception as e:
                 logger.error(f"Błąd w transformacji {technique.__class__.__name__}: {e}")
                 sys.exit(1)
@@ -43,6 +48,18 @@ class CodeObfuscator:
 
     def create_obfuscated_executable(self, filename="obfuscated_exploit"):
         obfuscated_code = self.obfuscate()
+        
+        # Save intermediate obfuscated code
+        intermediate_filename = "obfuscated_intermediate.py"
+        try:
+            with open(intermediate_filename, "w", encoding="utf-8") as file:
+                file.write(obfuscated_code)
+            logger.info(f"Zapisano pośredni obfuskowany kod do {intermediate_filename}")
+        except IOError as e:
+            logger.error(f"Błąd zapisu pliku {intermediate_filename}: {e}")
+            sys.exit(1)
+
+        # Apply cipher encryption for obfuscated_exploit.py
         encrypted_code = self.cipher.encrypt(obfuscated_code)
         key_parts = self.cipher.split_key()
         final_code = self.cipher.generate_decoder(encrypted_code, key_parts)

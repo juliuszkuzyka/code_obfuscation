@@ -1,4 +1,5 @@
 obfuscated_exploit.py
+obfuscated_intermediate.py
 build/
 dist/
 *.spec
