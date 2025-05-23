@@ -5,13 +5,16 @@ from src.utils import random_name
 class ASTManipulator(ast.NodeTransformer):
     """Zmienia nazwy zmiennych i funkcji na losowe, pomijając standardowe i chronione."""
 
-    def __init__(self):
+    def __init__(self, protected_names=None):
         self.var_map = {}
         self.func_map = {}
         self.protected_names = {
             "os", "sys", "print", "base64", "len", "range", "bool", "iter", "next",
             "path", "expanduser", "makedirs", "join", "exist_ok", "StopIteration"
         }
+
+        if protected_names:
+            self.protected_names.update(protected_names)
 
     def visit_Name(self, node):
         if isinstance(node.ctx, (ast.Store, ast.Load)):

@@ -1,4 +1,5 @@
 import sys
+import os
 from src.obfuscator import CodeObfuscator
 from techniques.junk_code import JunkCodeInserter
 from techniques.polymorphism import PolymorphismTransformer
@@ -25,6 +26,16 @@ def get_technique_classes():
     }
 
 def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <file_path>")
+        sys.exit(1)
+
+    file_path = sys.argv[1]
+
+    if not os.path.isfile(file_path):
+        print(f"Error: File '{file_path}' does not exist.")
+        sys.exit(1)
+
     print("Wybierz techniki obfuskacji (oddzielone przecinkami):")
     print("1 - Wstawianie losowego kodu (Junk Code)")
     print("2 - Polimorfizm (Polymorphism)")
@@ -46,7 +57,7 @@ def main():
             sys.exit(1)
         selected_techniques.append(technique_classes[num]())
     
-    code = load_code("calc.py")
+    code = load_code(file_path)
     obfuscator = CodeObfuscator(code, selected_techniques)
     obfuscator.create_obfuscated_executable()
 

@@ -33,6 +33,9 @@ class CodeObfuscator:
             key=lambda t: 0 if isinstance(t, PolymorphismTransformer) else 1
         )
         for technique in ordered_techniques:
+            if isinstance(technique, ASTManipulator):
+                technique = ASTManipulator(self.get_imported_libs())
+
             logger.info(f"Stosowanie techniki: {technique.__class__.__name__}")
             logger.debug(f"AST przed {technique.__class__.__name__}: {ast.dump(tree, indent=2)}")
             tree = technique.apply(tree)
@@ -68,14 +71,17 @@ class CodeObfuscator:
             with open(obfuscated_filename, "w", encoding="utf-8") as file:
                 file.write(final_code)
             logger.info(f"Zapisano obfuskowany kod do {obfuscated_filename}")
+
             cmd = [
                 "pyinstaller",
                 "--onefile",
-                "--hidden-import=os",
-                "--hidden-import=base64",
-                "--hidden-import=sys",
-                obfuscated_filename
             ]
+
+            for lib_name in self.get_top_libs():
+                cmd.append(f"--hidden-import={lib_name}")
+
+            cmd.append(obfuscated_filename)
+
             process = subprocess.run(
                 cmd,
                 check=True,
@@ -91,3 +97,30 @@ class CodeObfuscator:
         except IOError as e:
             logger.error(f"Błąd zapisu pliku: {e}")
             sys.exit(1)
+
+    def get_top_libs(self):
+        imported_libraries = set()
+        
+        tree = ast.parse(self.code)
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imported_libraries.add(alias.name.split('.')[0])
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imported_libraries.add(node.module.split('.')[0])
+
+        return sorted(list(imported_libraries))
+
+    def get_imported_libs(self):
+        imported_names = set()
+
+        tree = ast.parse(self.code)
+
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                for alias in node.names:
+                    imported_names.add(alias.asname if alias.asname else alias.name)
+
+        return sorted(list(imported_names))
