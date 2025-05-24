@@ -10,7 +10,7 @@ class ASTManipulator(ast.NodeTransformer):
         self.func_map = {}
         self.protected_names = {
             "os", "sys", "print", "base64", "len", "range", "bool", "iter", "next",
-            "path", "expanduser", "makedirs", "join", "exist_ok", "StopIteration"
+            "path", "expanduser", "makedirs", "join", "exist_ok", "StopIteration", "args"
         }
 
         if protected_names:

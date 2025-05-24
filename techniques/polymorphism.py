@@ -175,14 +175,16 @@ class PolymorphismTransformer(ast.NodeTransformer):
                         name=print_helper,
                         args=ast.arguments(
                             posonlyargs=[],
-                            args=[ast.arg(arg="msg")],
+                            args=[],
+                            vararg=ast.arg(arg="args"),
                             kwonlyargs=[],
                             kw_defaults=[],
+                            kwarg=None,
                             defaults=[]
                         ),
                         body=[ast.Expr(value=ast.Call(
                             func=ast.Name(id="print", ctx=ast.Load()),
-                            args=[ast.Name(id="msg", ctx=ast.Load())],
+                            args=[ast.Starred(value=ast.Name(id="args", ctx=ast.Load()), ctx=ast.Load())],
                             keywords=[]
                         ))],
                         decorator_list=[]
