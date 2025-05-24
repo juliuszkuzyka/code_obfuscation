@@ -95,7 +95,7 @@ def run_tests(clean_func, test_func, source_code):
 
 if __name__ == "__main__":
     tests_test_dir_results = run_tests(clean_test_dir, test_test_dir_exec, "../hello_world.py")
-    tests_calc_results = run_tests(clean_calc, test_cal_exec, "../calc.py")
+    tests_calc_results = run_tests(clean_calc, test_cal_exec, "../examples/calc.py")
 
     print("==================================================")
     print("tests for hello_world.py")
